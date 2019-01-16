@@ -1,5 +1,5 @@
 clc;clear;close all;
-path='C:\Users\Administrator\Desktop\ELEC9782EXAM\Data\Data\Speaker';
+path='\Data\Data\Speaker';
 num_of_speaker=10;num_of_train=7;
 ubm_train=[];
 for i =1:num_of_speaker

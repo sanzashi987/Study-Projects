@@ -58,57 +58,57 @@ class Maze:
 #             sys.exit()
         
         dic=[{0:[1,1],1:[1,0],2:[0,1],3:[0,0]},{0:[1],1:[1],2:[0],3:[0]},{0:[1],1:[0],2:[1],3:[0]}]
-        self.reshape=[[[] for _ in range (length)] for _ in range (height)]
-        for j in range(height):
+        self.reshape=[[[] for _ in range (length)] for _ in range (height)] # the model for the maze 
+        for j in range(height):# the unit for this mapping is block, so that there will be lengh by height blocks.
             for i in range (length):
                 explore_list=[(i,j),(i+1,j),(i,j+1)]
                 for k,ele in enumerate(explore_list):
                     self.reshape[j][i].extend(dic[k][self.grid[ele[1]][ele[0]]])
-        self.reshape_dot=[[[0,0,0,0] for _ in range (length+1)] for _ in range (height+1)]
+        self.reshape_dot=[[[0,0,0,0] for _ in range (length+1)] for _ in range (height+1)] # the model for the maze in dots
         dic_dot=[{0:0,1:1,2:0,3:1},{0:0,1:0,2:1,3:1},{0:0,1:1,2:0,3:1},{0:0,1:0,2:1,3:1}]
-        for j in range(height+1):
+        for j in range(height+1):# the unit for this mapping is intersect dot, so that there will be lengh+1 by height+1 dots.
             for i in range(length+1):
                 explore_list=[(i-1,j),(i,j-1),(i,j),(i,j)]
                 for k, ele in enumerate(explore_list):
                     if ele[0]<0 or ele[0]>self.length or ele[1]<0 or ele[1]>self.height:continue
                     self.reshape_dot[j][i][k]=dic_dot[k][self.grid[ele[1]][ele[0]]]
-        def gate(self):
+        def gate(self): #finding all the missing walls around the maze. using block map
             self.count_gate=0
-            for k, ele in enumerate(self.reshape[0]):
-                if ele[1]==1:
+            for k, ele in enumerate(self.reshape[0]): # first row
+                if ele[1]==1: #the missing top is a gate
                     self.count_gate+=1
                     self.gate_list.append((0,k))
-            for k, ele in enumerate(self.reshape[self.height-1]):
-                if ele[3]==1:
+            for k, ele in enumerate(self.reshape[self.height-1]):#last row
+                if ele[3]==1: # missing bottom is a gate
                     self.count_gate+=1
                     self.gate_list.append((self.height-1,k))
-            reshape_temp=list(zip(*self.reshape))
-            for k, ele in enumerate(reshape_temp[0]):
-                if ele[0]==1:
+            reshape_temp=list(zip(*self.reshape)) #transpose the maze (rotating by 90 degrees)
+            for k, ele in enumerate(reshape_temp[0]): # first column 
+                if ele[0]==1: # missing left is a gate 
                     self.count_gate+=1
-                    self.gate_list.append((k,0))
-            for k, ele in enumerate(reshape_temp[self.length-1]):
-                if ele[2]==1:
+                    self.gate_list.append((k,0)) #coordinates should be reversely appended 
+            for k, ele in enumerate(reshape_temp[self.length-1]): # last colunm
+                if ele[2]==1: # missing right is a gate
                     self.count_gate+=1
                     self.gate_list.append((k,self.length-1))
-            self.gate_list=list(set(self.gate_list))
+            self.gate_list=list(set(self.gate_list)) #coordinates should be reversely appended
                 
-        def walls(self): 
+        def walls(self): #finding all intergrated walls using intersect dot model
             self.count_wall=0
-            def iteration(maplist,i,j):
+            def iteration(maplist,i,j): #inner function,
                 move_dic={0:[i-1,j],1:[i,j-1],2:[i+1,j],3:[i,j+1]}
                 for k, ele in enumerate(maplist[j][i]):
-                    if ele:
-                        maplist[j][i][k]=0
-                        maplist[move_dic[k][1]][move_dic[k][0]][self.nex_dic[k]]=0
-                        iteration(maplist,move_dic[k][0],move_dic[k][1])               
-            connect=copy.deepcopy(self.reshape_dot)
-            for j in range(self.height+1):
-                for i in range(self.length+1):
-                    if connect[j][i]==[0,0,0,0]:continue
-                    iteration(connect,i,j)
-                    self.count_wall+=1           
-        def access(self):
+                    if ele:#if the dot is connected to other dots(4 directions)
+                        maplist[j][i][k]=0 #marked that path as already travelled
+                        maplist[move_dic[k][1]][move_dic[k][0]][self.nex_dic[k]]=0 # also marked corrsponding dot's path to avoid trace back
+                        iteration(maplist,move_dic[k][0],move_dic[k][1])  #jump to the next dot             
+            connect=copy.deepcopy(self.reshape_dot) #deep copy avoid corrupting the original sample
+            for j in range(self.height+1): #scaning row by row
+                for i in range(self.length+1): #scaning dot by dot in each row
+                    if connect[j][i]==[0,0,0,0]:continue # ignore an isolated dot or a dot that all possible paths are marked travelled 
+                    iteration(connect,i,j) 
+                    self.count_wall+=1      # a sets of iteration finished means a intergrated wall is counted  
+        def access(self): # using block model
             self.roam_list =[[False for _ in range (self.length)] for _ in range (self.height)]
             self.count_access=0
             self.count_inacess=0
@@ -130,7 +130,7 @@ class Maze:
             for ele in self.roam_list:
                 uac=collections.Counter(ele)
                 self.count_inacess+=uac[False]        
-        def dead_path(self):
+        def dead_path(self): # using block model
             self.count_cul=0
             def iteration_path(maplist,i,j):
                 self.roam_list[j][i]='x'
@@ -164,9 +164,9 @@ class Maze:
                         iteration_x(block_2,i,j)
                         self.count_cul+=1
             
-        def uni_path(self):
+        def uni_path(self): # using block model
             self.count_uni, count_current=0,0
-            self.stack=[]
+            self.stack=[] # the stack for unipath's coordinates
             def iteration_uni(maplist,i,j):
                 nonlocal count_current 
                 self.roam_list[j][i]='p'
@@ -190,7 +190,7 @@ class Maze:
                     for ele in self.stack:
                         self.roam_list[ele[1]][ele[0]]=count_current
                     self.stack=[]
-                    if count_current==2: 
+                    if count_current==2:  # each block have one entry one exit is a uni pass
                         self.count_uni+=1  
         gate(self)
         walls(self)
